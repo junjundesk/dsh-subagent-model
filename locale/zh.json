@@ -1,0 +1,30 @@
+{
+  "meta": { "title": "子代理模型", "description": "独立选择子代理的分组、模型与推理强度，支持 Chat、Responses 和 Claude 自定义 API。" },
+  "ui": {
+    "title": "子代理模型", "subtitle": "把合适的模型分配给子任务，主对话保持不变。",
+    "scope": "此设置作用于当前 profile 的所有会话，仅在新建本地子代理时应用。已运行或恢复的子代理、主代理、外部 Codex / Claude Code 子进程不受影响。",
+    "routing": "模型选择", "inherit": "跟随 DSH 原有行为", "inheritHelp": "不覆盖子代理的模型；通常继承主代理，也保留工具原有默认设置。",
+    "fixed": "使用指定模型", "fixedHelp": "为新建本地子代理固定分组、模型和强度，包括 spawn、fork 和本地团队成员。",
+    "group": "分组 / 服务商", "model": "模型", "effort": "推理强度", "auto": "自动（模型默认）", "choose": "请选择",
+    "noEffort": "当前模型未声明可选强度。自动不会沿用其他模型的强度。",
+    "saved": "已保存。下一个新建本地子代理将使用这项设置。", "save": "保存设置", "saving": "处理中…", "refresh": "重新载入", "refreshHelp": "重新载入会丢弃尚未保存的模型选择。", "loading": "正在读取 DSH 模型和设置…",
+    "active": "当前已保存", "unchanged": "跟随 DSH 原有行为", "draft": "有尚未保存的修改", "readOnly": "当前连接无法编辑设置。", "retry": "重试",
+    "partialCatalog": "部分模型分组读取失败；其他可用分组仍可选择。", "missingModel": "已保存的模型当前不可用，请重新选择。",
+    "custom": "添加自定义 API", "customHelp": "创建一个独立的 DSH 模型分组。添加成功后选择推理强度并点击“保存设置”；不会修改已有分组。后续可在 DSH“设置 → 模型”中编辑。",
+    "slug": "分组标识", "slugHelp": "小写字母、数字和连字符，1–40 字符。自动添加 dsh-subagent- 前缀。", "displayName": "分组显示名称", "apiType": "请求类型",
+    "chat": "Chat · OpenAI Chat Completions", "responses": "Responses · OpenAI Responses", "claude": "Claude · Anthropic Messages",
+    "baseURL": "API 基础地址", "urlHelp": "例如 https://api.example.com/v1。若粘贴完整接口路径，会去掉 chat/completions、responses 或 messages 后缀，由 DSH 适配器补齐。",
+    "modelId": "模型 ID", "modelHelp": "填写 API 接受的精确模型标识，不是显示名称。", "apiKey": "API 密钥", "keyHelp": "密钥仅提交给 DSH 凭据服务，不存入插件配置、源码、浏览器本地存储或工具参数。",
+    "contextWindow": "上下文窗口（tokens）", "maxTokens": "最大输出（tokens）", "capabilities": "声明此 API 支持的推理强度（可选）", "capabilitiesHelp": "只勾选服务商实际支持的值。不勾选表示不发送推理强度；此处不会探测 API 能力。",
+    "addApi": "添加 API 分组", "apiAdded": "API 分组已添加，模型已填入上方草稿。请确认强度并点击“保存设置”。", "keyRequired": "请输入 API 密钥。",
+    "keySavedPartial": "密钥已存入下方凭据引用，但分组保存失败。请检查 DSH 模型设置后重试；插件不会删除已保存的密钥。",
+    "providerSavedPartial": "分组已保存，但激活校验或读取最新状态失败。请重新载入并检查 DSH 模型设置，不要重复添加。",
+    "security": "使用自定义 API 时，子任务及其工具结果会发送至该地址；fork 子代理还会发送继承的对话。请仅使用信任的服务商。HTTP 连接不加密。",
+    "policy": "不修改 DSH 原有模型选择授权。主代理调用子代理时可省略模型参数；显式指定未获授权的模型仍会由 DSH 拒绝。切换 fork 模型可能降低缓存复用。",
+    "apiUnavailable": "当前未发现 DSH 内置自定义 API 适配器，仍可选择已有模型。",
+    "error.invalid_mode": "无效的模式。", "error.select_model": "请选择分组和模型，或填写有效的模型 ID。", "error.model_unavailable": "模型当前不可用，请重新载入。", "error.effort_unavailable": "此模型不支持所选强度。", "error.invalid_url": "请输入不含密钥、查询参数或片段的 HTTP(S) API 地址。",
+    "error.invalid_slug": "分组标识应为 1–40 位小写字母、数字或连字符，并以字母或数字开头。", "error.invalid_api_type": "请选择 Chat、Responses 或 Claude。", "error.invalid_credential_ref": "凭据引用必须是合法的环境变量式名称。",
+    "error.invalid_token_limits": "Token 限制必须为正整数，最大输出不得超过上下文窗口。", "error.invalid_efforts": "强度声明无效；不能只勾选 off，需至少一项实际推理强度。", "error.provider_activation_failed": "分组配置已保存，但适配器尚未成功注册。请在 DSH 模型设置中检查后重新载入。", "error.plugin_settings_unavailable": "插件设置尚不可用，请刷新页面或检查插件状态。", "error.api_adapter_unavailable": "没有找到兼容的 DSH 自定义 API 适配器。",
+    "error.revision_required": "缺少设置修订号，请重新载入。", "error.settings_read_only": "当前设置只读。", "error.settings_conflict": "设置已在别处更改。请重新载入后再保存，草稿未覆盖远端。", "error.provider_exists": "该分组标识已存在。请换一个标识，或到 DSH 模型设置中编辑已有分组。", "error.credential_missing": "凭据未配置，请先保存 API 密钥。"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "meta": { "title": "Subagent models", "description": "Choose subagent provider groups, models and reasoning efforts, with custom Chat, Responses and Claude APIs." },
+  "ui": {
+    "title": "Subagent models", "subtitle": "Give subtasks their own model while keeping your main conversation unchanged.",
+    "scope": "Applies across this profile, only when a local subagent is created. Existing or resumed children, the main agent, and external Codex / Claude Code processes are unchanged.",
+    "routing": "Model selection", "inherit": "Keep DSH defaults", "inheritHelp": "Do not override the child model. Usually inherits the parent; existing tool defaults are preserved.",
+    "fixed": "Use a specific model", "fixedHelp": "Choose a fixed provider, model and effort for new local children, including spawn, fork and local teammates.",
+    "group": "Group / provider", "model": "Model", "effort": "Reasoning effort", "auto": "Auto (model default)", "choose": "Select an option",
+    "noEffort": "This model advertises no reasoning efforts. Auto does not inherit another model’s effort.",
+    "saved": "Saved. The next new local subagent will use this setting.", "save": "Save settings", "saving": "Working…", "refresh": "Reload", "refreshHelp": "Reload discards unsaved model selections.", "loading": "Loading DSH models and settings…",
+    "active": "Currently saved", "unchanged": "Keep DSH defaults", "draft": "Unsaved changes", "readOnly": "This connection cannot edit settings.", "retry": "Retry",
+    "partialCatalog": "Some provider groups could not be loaded. Available groups can still be selected.", "missingModel": "The saved model is unavailable. Select another model.",
+    "custom": "Add a custom API", "customHelp": "Create a separate DSH model group. After adding it, choose an effort and save the model selection. Existing groups are untouched. Edit the group later under DSH Settings → Models.",
+    "slug": "Group identifier", "slugHelp": "1–40 lowercase letters, digits or hyphens. The dsh-subagent- prefix is added automatically.", "displayName": "Group display name", "apiType": "Request type",
+    "chat": "Chat · OpenAI Chat Completions", "responses": "Responses · OpenAI Responses", "claude": "Claude · Anthropic Messages",
+    "baseURL": "API base URL", "urlHelp": "For example https://api.example.com/v1. A pasted chat/completions, responses or messages suffix is removed; the DSH adapter appends its endpoint.",
+    "modelId": "Model ID", "modelHelp": "Use the exact identifier accepted by the API, not its display label.", "apiKey": "API key", "keyHelp": "Submitted only to the DSH credential service, never stored in plugin config, source, browser storage or tool arguments.",
+    "contextWindow": "Context window (tokens)", "maxTokens": "Maximum output (tokens)", "capabilities": "Reasoning efforts supported by this API (optional)", "capabilitiesHelp": "Select only values your provider actually supports. None means no effort is sent. This does not probe API capabilities.",
+    "addApi": "Add API group", "apiAdded": "API group added and placed in the model selection draft. Choose an effort and click Save settings.", "keyRequired": "Enter an API key.",
+    "keySavedPartial": "The key was saved under the reference below, but the provider could not be saved. Check DSH model settings before retrying. The saved key will not be deleted automatically.",
+    "providerSavedPartial": "The group was saved, but activation verification or reading the latest state failed. Reload and check DSH model settings; do not add it again.",
+    "security": "Custom APIs receive subtask content and tool results; forked children also send inherited conversation history. Use only trusted providers. HTTP is unencrypted.",
+    "policy": "Does not change DSH model-selection authorization. Omit model arguments when delegating; explicit unauthorized choices are still rejected by DSH. Changing a fork’s model may reduce cache reuse.",
+    "apiUnavailable": "The built-in custom API adapter is unavailable. Existing models remain selectable.",
+    "error.invalid_mode": "Invalid mode.", "error.select_model": "Choose a provider and model, or enter a valid model ID.", "error.model_unavailable": "The model is unavailable. Reload the catalog.", "error.effort_unavailable": "The model does not support this effort.", "error.invalid_url": "Enter an HTTP(S) API URL without credentials, query parameters or fragments.",
+    "error.invalid_slug": "Use 1–40 lowercase letters, digits or hyphens, starting with a letter or digit.", "error.invalid_api_type": "Choose Chat, Responses or Claude.", "error.invalid_credential_ref": "Use a valid environment-variable-style credential reference.",
+    "error.invalid_token_limits": "Token limits must be positive integers; maximum output cannot exceed the context window.", "error.invalid_efforts": "Include at least one actual reasoning effort; off alone is not supported.", "error.provider_activation_failed": "The group was saved but its adapter did not activate. Check DSH model settings and reload.", "error.plugin_settings_unavailable": "Plugin settings are not available. Refresh the page or check plugin activation.", "error.api_adapter_unavailable": "A compatible DSH custom API adapter was not found.",
+    "error.revision_required": "Missing settings revision. Reload first.", "error.settings_read_only": "Settings are read-only.", "error.settings_conflict": "Settings changed elsewhere. Reload before saving; your draft did not overwrite them.", "error.provider_exists": "This group identifier already exists. Choose another identifier or edit it in DSH model settings.", "error.credential_missing": "No credential is configured. Save an API key first."
+  }
+}

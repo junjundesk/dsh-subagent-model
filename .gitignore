@@ -1,0 +1,12 @@
+node_modules/
+*.tgz
+.env
+.env.*
+.dsh/
+*.log
+*.jsonl
+*.jsonl.zstd
+coverage/
+dist/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,6 @@
+- insert:
+    - id: dsh-subagent-model
+      name: dsh-subagent-model
+      config:
+        selection:
+          mode: inherit

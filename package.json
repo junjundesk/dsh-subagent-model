@@ -1,0 +1,34 @@
+{
+  "name": "dsh-subagent-model",
+  "version": "1.0.1",
+  "private": true,
+  "type": "module",
+  "description": "独立设置 DSH 子代理模型、推理强度和自定义 API / Model routing and custom APIs for DSH subagents",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "git+https://github.com/junjundesk/dsh-subagent-model.git" },
+  "homepage": "https://github.com/junjundesk/dsh-subagent-model#readme",
+  "bugs": { "url": "https://github.com/junjundesk/dsh-subagent-model/issues" },
+  "keywords": ["dsh", "deepseek-harness", "subagent", "model-selection", "cordis-plugin"],
+  "engines": { "node": ">=22", "dsh": "^0.2.2-alpha.2" },
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": ["index.js", "logic.js", "client.js", "client.source.js", "build.mjs", "style.css", "test/*.mjs", "cordis.patch.yml", "locale/*.json", "icon.svg", "README.md", "TESTING.md", "CHANGELOG.md", "docs/*.md", "LICENSE"],
+  "scripts": {
+    "build": "node build.mjs",
+    "check": "node --check index.js && node --check logic.js && node --check client.js",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": { "@deepseek-ai/schemastery": "~3.18.6-alpha.1" },
+  "dsh": {
+    "bundle": { "patch": "./cordis.patch.yml" },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": ["@deepseek-ai/dsh-api-remotes", "@deepseek-ai/dsh-client-locale", "@deepseek-ai/dsh-client-ui-settings", "@deepseek-ai/dsh-client-ui-plugin-manager"]
+    }
+  }
+}

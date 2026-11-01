@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Subagent model routing">
+  <rect width="64" height="64" rx="15" fill="#1b3149"/>
+  <path d="M32 24v9M16 40v-7h32v7" fill="none" stroke="#8cd6da" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="23" y="10" width="18" height="16" rx="5" fill="#d5f6f2"/>
+  <rect x="8" y="39" width="16" height="15" rx="4" fill="#65c8c5"/>
+  <rect x="40" y="39" width="16" height="15" rx="4" fill="#9fa9ff"/>
+  <path d="M29 17h6M16 44v5M13.5 46.5h5M45 46.5h6" fill="none" stroke="#1b3149" stroke-width="2" stroke-linecap="round"/>
+</svg>
