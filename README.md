@@ -1,3 +1,5 @@
+QQ交流群:744475787
+
 # 子代理模型 · dsh-subagent-model
 
 为 **DeepSeek Harness（DSH）新建的本地子代理**单独选择分组、模型和推理强度，主对话模型保持不变。支持自定义 **Chat Completions、Responses、Claude / Anthropic Messages API**。
