@@ -19,7 +19,7 @@ window.__ModuleLoader__.load({
     }
 
     return {
-      name: `${PLUGIN_ID}@1.1.0`,
+      name: `${PLUGIN_ID}@1.1.1`,
       // Remote namespaces are separate Cordis services; the root alone does not grant access.
       inject: ['slots', 'locale', 'remote', 'remote.settings', 'remote.session', 'remote.llm', 'remote.credentials'],
       apply(ctx) {

@@ -2,11 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
+const manifest = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+
 // Cordis tracks generated Remote namespaces as individual services. Injecting
 // only `remote` lets the page register but throws when an effect first reads data.
 for (const filename of ['client.source.js', 'client.js']) {
-  test(`${filename}: every accessed Remote namespace is explicitly injected`, async () => {
+  test(`${filename}: client version and Remote dependencies match the package contract`, async () => {
     const source = await readFile(new URL(`../${filename}`, import.meta.url), 'utf8');
+    const version = source.match(/name:\s*`\$\{PLUGIN_ID\}@([^`]+)`/);
+    assert.equal(version?.[1], manifest.version, 'Client must report the published package version');
     const declaration = source.match(/inject:\s*\[([^\]]+)\]/);
     assert.ok(declaration, 'Client plugin must declare its service dependencies');
     const dependencies = new Set([...declaration[1].matchAll(/['"]([^'"]+)['"]/g)].map(match => match[1]));

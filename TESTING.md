@@ -4,10 +4,10 @@
 
 ## 当前版本
 
-- 插件：`dsh-subagent-model@1.1.0`。
-- 已验证 DSH：`0.2.2-alpha.2`。
-- 实际宿主环境：Windows、Web profile。
-- 自动化：**44 项测试通过**；源码和生成产物的 JavaScript 语法检查通过。
+- 插件：`dsh-subagent-model@1.1.1`。
+- 历史真实宿主验证（1.1.0，**非完整浏览器 E2E**）：DSH `0.2.2-alpha.2`，Windows、Web profile。
+- `0.2.1-rc.5`：静态比对 + 模型选择适配 + **组件级路由验证（22/22 PASS）** 已完成；**真实 LLM / 完整 agent-loop / 浏览器与网络 E2E 未做**（分级见 1.1.1 小节）。
+- 自动化：**77 项测试全通过（0 跳过）**，经干净 `npm ci` + `build` + `check` + `test` 验证；源码和生成产物的 JavaScript 语法检查通过。
 
 ## 已验证
 
@@ -21,7 +21,7 @@
 - 已有分组不覆盖、重复路由拒绝、密钥不进入配置结果。
 - 分组已提交但后置校验失败时的部分成功返回，避免盲目重复写入。
 
-### DSH 真实环境
+### DSH 真实环境（1.1.0 历史记录）
 
 - 通过官方插件管理器安装启用，返回 `application: applied`。
 - Host Config 已激活。
@@ -51,11 +51,28 @@ cannot get property "remote.settings" without inject
 - 明确限制：DSH 不允许插件改写参数，守卫只能拒绝并说明正确参数，不能替模型替换调用。
 - 自动化测试从 41 项增至 **44 项**，全部通过。
 
+### 1.1.1 DSH 0.2.1-rc.5 兼容
+
+- **安装门槛**：`engines.dsh` 改为 `^0.2.1-rc.5`（`>=0.2.1-rc.5 <0.3.0-0`）。用 DSH 自带 semver + `includePrerelease: true`（安装器同款判定）实测：`0.2.1-rc.5` / `0.2.1` / `0.2.2-alpha.2` / `0.2.2` 通过，`0.2.1-rc.4` / `0.3.0-alpha.1` / `0.3.0` 拒绝；完整矩阵见 [版本兼容](<docs/COMPATIBILITY.md>)。判定依据是 DSH 的 `includePrerelease: true` 选项，不是普通 SemVer 默认规则。
+- **模型选择适配**：`applyChildSelection` 增加 `sessionController` 参数。选择顺序：优先 `agent.model.select()` → feature-detect 回退 `sessionController.agents.selectForNextRequest`（**内部/private 接口**，后续版本可能变更或移除）→ 两者都不可用时**创建失败**并说明原因，不静默用错模型。**任何路径都不调用公共 `selectModel`**（它改部署默认模型且拒绝子代理）。
+- **静态比对**：`dsh.bundle.patch` 与 `cordis.patch.yml` 契约、`dsh.client` 声明两版一致；`tools/pre-execute`、`tools/execute`、`settings.section`、`plugins.bundle.config` 存在；确认 `0.2.1-rc.5` **没有 `agent.model`**（固定模型在旧实现下必崩，是本次适配的直接原因）。
+- **组件级路由验证（22/22 PASS）**：真实 Cordis 4.0.5 + rc.5 组件执行 `ApiSessionAgentController` / `selectForNextRequest` / `installModelSelection` / `resolveChildAgentOptions`；最终 system-prompt/assemble variables 与 agent/request config 首轮/次轮（provider/model/effort）覆盖正确，maxTokens 保留。边界：**非真实 LLM、非完整 agent-loop、非浏览器/网络 E2E**；loop seed 为复刻、session 为内存桩。可选 portable 脚本 [`test/verify-rc5-runtime.mjs`](<test/verify-rc5-runtime.mjs>) 调用插件实际 `applyChildSelection`，不提前安装选择监听器，验证兼容桥首次调用时能自行安装；缺省强度场景先断言种子含 `high`，再断言最终请求移除该字段。22/22 项断言通过，且公共 `selectModel` 与部署默认模型均未被访问。
+- **验证分级**：
+
+| 级别 | 内容 |
+| --- | --- |
+| 历史真实宿主验证（1.1.0，非完整浏览器 E2E） | DSH `0.2.2-alpha.2` / Windows Web profile |
+| 静态比对 + 判定验证 | DSH `0.2.1-rc.5`：清单契约、Client 声明、UI 插槽、`tools` 钩子、SemVer 安装判定 |
+| 组件级路由验证（22/22 PASS） | 真实 Cordis 4.0.5 + rc.5 组件下 `selectForNextRequest` 回退路径：assemble/请求配置首轮/次轮 provider/model/effort 覆盖正确、maxTokens 保留 |
+| 仍未做 | 真实 LLM、完整 agent-loop、浏览器/网络 E2E（loop seed 为复刻、session 为内存桩） |
+| 自动化测试 | 77 项全通过（0 跳过） |
+
 ## 未验证、不能据此承诺的部分
 
 - 没有浏览器自动控制或截图验收：不声称做过逐像素、完整表单点击或深浅主题人工视觉验证。
 - 未使用新服务商的真实密钥做联网推理测试：具体网关的认证、额度、工具调用和推理参数兼容性仍取决于服务商。
 - 未逐个测试所有 DSH `0.2.x` 版本，也未进行 macOS、Linux、Desktop 的 DSH 端到端测试。
+- **DSH `0.2.1-rc.5` 未做完整端到端**：内部接口回退路径已有组件级路由验证（22/22 PASS，见 1.1.1 小节），但未接真实 LLM、未跑完整 agent-loop、未做浏览器/网络 E2E，不能当作端到端承诺。
 - 静态 Client 契约测试、目录校验、配置落盘成功，都不能代替实际请求验证。
 
 ## 重跑自动化检查
@@ -68,6 +85,25 @@ npm test
 ```
 
 [业务测试](<test/logic.test.mjs>)覆盖路由和配置操作；[Client 契约测试](<test/client-contract.test.mjs>)检查源文件与生成产物的 Remote 依赖声明。
+
+## 可选：重跑真实 rc.5 组件级验收
+
+[verify-rc5-runtime.mjs](<test/verify-rc5-runtime.mjs>) 不属于默认的 77 项测试，不会自动安装依赖或启动服务。在独立的新建 npm 工程目录中安装精确版本（不要在运行中的 DSH profile 或插件源码目录安装这些宿主依赖）：
+
+```bash
+npm init -y
+npm install --ignore-scripts --no-audit --no-fund @deepseek-ai/cordis@4.0.5 @deepseek-ai/dsh-agent@0.2.1-rc.5 @deepseek-ai/dsh-api-session-controller@0.2.1-rc.5 @deepseek-ai/dsh-subagent@0.2.1-rc.5
+```
+
+然后从插件源码目录运行，传入刚才隔离工程的绝对路径：
+
+```bash
+node test/verify-rc5-runtime.mjs "/absolute/path/to/rc5-probe"
+```
+
+预期输出 `{"total":22,"pass":22,"fail":0}`。探针先核对实际加载的包名/版本，再用真实 rc.5 控制器与 Cordis 瀑布执行插件选择逻辑，不连接服务商、不使用凭据、不读取用户会话。内存会话与 loop 种子是测试夹具，因此不能将这 22 项断言称为完整 Agent-loop 或联网端到端测试。
+
+npm 发布包不含源码锁文件；单独解包运行测试时，[包元数据测试](<test/package-metadata.test.mjs>) 的锁文件一致性项会按设计跳过，其他检查照常执行。
 
 ## 可选：核对自己的测试会话
 

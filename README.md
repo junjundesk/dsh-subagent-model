@@ -4,8 +4,8 @@ QQ交流群:744475787
 
 为 **DeepSeek Harness（DSH）新建的本地子代理**单独选择分组、模型和推理强度，主对话模型保持不变。支持自定义 **Chat Completions、Responses、Claude / Anthropic Messages API**。
 
-- 当前插件版本：**1.1.0**，包含团队消息参数守卫；1.0.1 修复了设置页 `remote.settings without inject` 问题。
-- 已验证的 DSH：**0.2.2-alpha.2 / Web profile / Windows**。
+- 当前插件版本：**1.1.1**，支持 DSH `0.2.1-rc.5`（安装门槛放宽 + 子代理模型选择适配）；1.1.0 包含团队消息参数守卫，1.0.1 修复了设置页 `remote.settings without inject` 问题。
+- 历史真实宿主验证（1.1.0，**非完整浏览器 E2E**）：**0.2.2-alpha.2 / Web profile / Windows**；`0.2.1-rc.5` 为静态比对 + 适配 + **组件级路由验证（22/22 PASS）**，真实 LLM / 完整 agent-loop / 浏览器与网络 E2E 未做（验证分级见 [验证范围](<TESTING.md>)）。
 - 原生 DSH 插件；不是独立网页，不需要另开服务。
 - 默认不覆盖任何模型，安装后由你决定是否启用固定模型。
 
@@ -23,71 +23,66 @@ QQ交流群:744475787
 | 可恢复 | 切回“跟随 DSH 原有行为”即可停止覆盖 |
 | 中英文界面 | 跟随 DSH 语言和主题，提供设置入口及插件详情页入口 |
 | 团队消息参数守卫 | 识别把子代理 UUID 当作队友名的调用，返回可纠正提示而不是原始堆栈 |
+| DSH 版本适配 | 在缺少 `agent.model` 的 DSH（如 `0.2.1-rc.5`）上自动回退内部接口选择模型；路由校验失败则创建失败，绝不静默用错模型 |
 
 ## 安装
 
-### 方式一：在 DSH 界面安装（推荐）
+使用固定版本 [v1.1.1](<https://github.com/junjundesk/dsh-subagent-model/releases/tag/v1.1.1>)；[Latest 发布页](<https://github.com/junjundesk/dsh-subagent-model/releases/latest>)指向最新稳定版本。安装包和 Git 标签均包含已构建的客户端，无需编译，也没有 `postinstall` / `prepare` 脚本。
+
+### 方式一：GitHub 标签安装（推荐）
 
 1. 打开 DSH Web 的 **插件 → 添加插件**。
 2. 输入以下完整安装地址，选择安装并启用：
 
    ```text
-   github:junjundesk/dsh-subagent-model#v1.1.0
+   github:junjundesk/dsh-subagent-model#v1.1.1
    ```
 
 3. 按安装器提示刷新页面或重启 DSH。
-4. 打开 **设置 → 子代理模型**。也可以从 **插件 → 子代理模型** 进入。
+4. 打开 **设置 → 子代理模型**。
+
+命令行等价（需要 PATH 中已有 `pnpm` 和 Git；若目标 profile 正在运行，请先保存任务并退出）：
+
+```bash
+dsh plugin --profile web add "github:junjundesk/dsh-subagent-model#v1.1.1"
+```
 
 请安装固定标签而不是 `main`，以避免后续开发提交改变行为。该包从 GitHub 分发，**未发布到 npm registry**；不要用裸包名 `npm install dsh-subagent-model` 代替 DSH 安装流程。
 
-### 方式二：命令行安装
+### 方式二：安装编译好的 Release 包
 
-先确认版本：
-
-```bash
-dsh --version
-```
-
-安装到 `web` profile（需要 PATH 中已有 `pnpm`；GitHub 源安装还需要 Git）。若当前 DSH 正在运行，请先保存任务并退出该 profile，再执行：
+从 [v1.1.1 发布页](<https://github.com/junjundesk/dsh-subagent-model/releases/tag/v1.1.1>)下载 [dsh-subagent-model-1.1.1.tgz](<https://github.com/junjundesk/dsh-subagent-model/releases/download/v1.1.1/dsh-subagent-model-1.1.1.tgz>) 与 [SHA256SUMS.txt](<https://github.com/junjundesk/dsh-subagent-model/releases/download/v1.1.1/SHA256SUMS.txt>)，校验后在 DSH **添加插件** 中输入下载文件的绝对路径。也可把固定版本的发布资产 URL 交给 CLI：
 
 ```bash
-dsh plugin --profile web add "github:junjundesk/dsh-subagent-model#v1.1.0"
+dsh plugin --profile web add "https://github.com/junjundesk/dsh-subagent-model/releases/download/v1.1.1/dsh-subagent-model-1.1.1.tgz"
 ```
 
-安装会默认启用新 bundle。之后重新启动该 profile，并刷新浏览器：
+### 安装后收尾
+
+安装会默认启用新 bundle。之后重新启动目标 profile，并刷新浏览器：
 
 ```bash
-dsh --profile web
+dsh --version        # 先确认版本
+dsh --profile web    # 使用其他 profile 时换成实际名称
 ```
 
-使用其他 profile 时，把命令中的 `web` 换成实际名称。目标 profile 需要挂载 DSH Web、模型、设置和凭据服务；纯 headless/TUI 不提供本插件界面。
+目标 profile 需要挂载 DSH Web、模型、设置和凭据服务；纯 headless/TUI 不提供本插件界面。
 
 > CLI 用法以 DSH `0.2.2-alpha.2` 为基准。不要手改 profile 的依赖文件或配置补丁，也不要在 profile 目录直接执行 npm/pnpm 来代替插件管理器。
-
-### 方式三：安装发布包
-
-从 [Releases](<https://github.com/junjundesk/dsh-subagent-model/releases/tag/v1.1.0>) 下载 `dsh-subagent-model-1.1.0.tgz`，在 DSH **添加插件** 中输入下载文件的绝对路径。发布页同时提供 SHA-256 校验文件。
-
-也可把发布资产 URL 交给 CLI：
-
-```bash
-dsh plugin --profile web add "https://github.com/junjundesk/dsh-subagent-model/releases/download/v1.1.0/dsh-subagent-model-1.1.0.tgz"
-```
-
-安装包包含已构建的客户端，无需编译，也没有 `postinstall` / `prepare` 脚本。
 
 ## 支持的 DSH 版本
 
 | DSH 版本 / 环境 | 状态 |
 | --- | --- |
-| **0.2.2-alpha.2，Windows Web profile** | **已验证**：安装、Client 注册、Host 读写和真实子代理请求路由 |
-| 低于 `0.2.2-alpha.2` | 不支持，缺少兼容验证，不建议强行豁免版本限制 |
+| **0.2.2-alpha.2，Windows Web profile** | **历史真实宿主验证（1.1.0，非完整浏览器 E2E）**：安装、Client 注册、Host 读写和真实子代理请求路由 |
+| `0.2.1-rc.5` | 清单接纳（1.1.1 起）；静态比对 + 模型选择适配 + **组件级路由验证（22/22 PASS）**（`sessionController.agents.selectForNextRequest` 内部接口回退路径下请求配置覆盖正确）；**真实 LLM / 完整 agent-loop / 浏览器与网络 E2E 未做** |
+| 低于 `0.2.1-rc.5` | 不支持，清单不接纳，不建议强行豁免版本限制 |
 | 其他 `0.2.x` | 未逐一测试；安装器是否接纳由版本范围决定，不代表已验证兼容 |
 | `0.3.0` 及以上（包括 `0.3.0` 预发布） | 当前清单不接纳，需后续适配 |
 | macOS / Linux Web | 源码没有平台专用运行依赖，但尚未进行 DSH 端到端验证 |
 | Headless、TUI、外部 Codex / Claude Code CLI | 不是本插件 UI 的支持目标 |
 
-[package.json](<package.json>) 声明 `engines.dsh: ^0.2.2-alpha.2`，插件自身声明 Node.js `>=22`；运行 DSH 还必须满足 DSH 自身的 Node 要求。**声明范围不是测试矩阵**：DSH 会计入预发布版本，该范围从 `0.2.2-alpha.2` 起接纳后续 `0.2.x`，但排除 `0.3.0` 的预发布和正式版。详见 [兼容性说明](<docs/COMPATIBILITY.md>)。
+[package.json](<package.json>) 声明 `engines.dsh: ^0.2.1-rc.5`（即 `>=0.2.1-rc.5 <0.3.0-0`），插件自身声明 Node.js `>=22`；运行 DSH 还必须满足 DSH 自身的 Node 要求。**声明范围不是测试矩阵**：DSH 安装器开启 `includePrerelease: true`，预发布版本参与匹配——该范围从 `0.2.1-rc.5` 起接纳后续 `0.2.x`（实测 `0.2.1-rc.5` / `0.2.1` / `0.2.2-alpha.2` / `0.2.2` 均接纳），但严格排除 `0.3.0` 的预发布和正式版（1.1.0 的 `^0.2.2-alpha.2` 下限会拒绝 `0.2.1-rc.5`，1.1.1 已放宽）。完整判定矩阵见 [兼容性说明](<docs/COMPATIBILITY.md>)。
 
 ## 快速使用
 

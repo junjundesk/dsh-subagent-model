@@ -4,9 +4,9 @@
 
 ## 1. 安装前检查
 
-1. 运行 `dsh --version`，当前已验证版本为 **0.2.2-alpha.2**。
+1. 运行 `dsh --version`。历史真实宿主验证（1.1.0，非完整浏览器 E2E）为 **0.2.2-alpha.2**；1.1.1 起清单也接纳 `0.2.1-rc.5`（静态比对 + 模型选择适配 + 组件级路由验证 22/22 PASS，真实 LLM / 浏览器 E2E 未做，见 [版本兼容](<COMPATIBILITY.md>)）。
 2. 使用挂载了原生模型、设置、凭据服务的 DSH Web profile。
-3. 安装标签 `github:junjundesk/dsh-subagent-model#v1.1.0`，启用插件后按提示刷新或重启。
+3. 通过固定标签 `github:junjundesk/dsh-subagent-model#v1.1.1` 或 [v1.1.1 Release](<https://github.com/junjundesk/dsh-subagent-model/releases/tag/v1.1.1>) 的编译包安装并启用，重启目标 profile 并刷新浏览器（详见 [README 安装章节](<../README.md>)）。
 4. 在 **设置 → 子代理模型** 打开；插件详情页也有相同面板。
 
 安装只注册功能，默认“跟随 DSH 原有行为”，不会帮你自动挑选或切换付费模型。
@@ -102,7 +102,7 @@ Claude:    https://api.anthropic.com
 
 ### `cannot get property "remote.settings" without inject`
 
-这是 1.0.0 的 Client 依赖声明缺失，**1.0.1 已修复**。确认安装的是 `#v1.1.0` 或更新的 1.x 版本，关闭设置后重新打开；旧缓存可强制刷新，仍不更新时按安装器提示重启 profile。
+这是 1.0.0 的 Client 依赖声明缺失，**1.0.1 已修复**。确认安装的是 1.0.1 或更新版本（当前为 1.1.1），关闭设置后重新打开；旧缓存可强制刷新，仍不更新时按安装器提示重启 profile。
 
 ### `active teammate "<uuid>" not found`
 
@@ -113,6 +113,15 @@ Claude:    https://api.anthropic.com
 ### 找不到设置入口
 
 确认安装到正在使用的 profile，插件已启用，并且该 profile 是具备原生服务的 Web profile。纯 headless/TUI 没有本插件面板。
+
+### 在 DSH 0.2.1-rc.5 上使用固定模型（内部接口回退）
+
+`0.2.1-rc.5` 没有 `agent.model`，1.1.1 会 feature-detect 回退到 `sessionController.agents.selectForNextRequest`。这是 DSH **内部/private 接口**（非公共契约，后续版本可能变更或移除）：
+
+- 只要宿主提供 `agent.model.select()`（如 `0.2.2-alpha.2`），插件始终优先走该公开路径；
+- **不会调用公共 `selectModel`**（它改部署默认模型且拒绝子代理请求），任何声称需要它的报错都应反馈给插件；
+- 路由校验失败时子代理**创建直接失败**并给出原因，不会静默用错模型；
+- 首次在 rc.5 启用后，请新建一个本地子代理跑最小任务，核对日志/会话中实际请求的 provider/model/强度，再决定是否长期启用。
 
 ### 显式选择子代理模型被 DSH 拒绝
 

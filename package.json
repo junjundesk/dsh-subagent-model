@@ -1,6 +1,6 @@
 {
   "name": "dsh-subagent-model",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "type": "module",
   "description": "独立设置 DSH 子代理模型、推理强度和自定义 API / Model routing and custom APIs for DSH subagents",
@@ -9,7 +9,7 @@
   "homepage": "https://github.com/junjundesk/dsh-subagent-model#readme",
   "bugs": { "url": "https://github.com/junjundesk/dsh-subagent-model/issues" },
   "keywords": ["dsh", "deepseek-harness", "subagent", "model-selection", "cordis-plugin"],
-  "engines": { "node": ">=22", "dsh": "^0.2.2-alpha.2" },
+  "engines": { "node": ">=22", "dsh": "^0.2.1-rc.5" },
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",

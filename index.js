@@ -55,7 +55,7 @@ export function installTeamTargetGuard(ctx) {
 export function apply(ctx, config) {
   const controller = createController(createHostApi(ctx));
   ctx.effect(() => ctx.settings.configure({ auto: false }, ctx.fiber));
-  ctx.on('agent/created', payload => applyChildSelection(ctx.llm, config.selection.get(), payload).then(() => undefined));
+  ctx.on('agent/created', payload => applyChildSelection(ctx.llm, config.selection.get(), payload, ctx.sessionController).then(() => undefined));
   if ((config?.guardTeamTargets?.get?.() ?? true) === true) installTeamTargetGuard(ctx);
 
   // Both this tool and the UI use createController -> the same native settings operations.

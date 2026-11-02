@@ -44,14 +44,29 @@ export function shouldRouteChild(source, header) {
   return source === 'startup' && header?.origin === 'subagent' && typeof header.parentSession === 'string';
 }
 
-export async function applyChildSelection(llm, selection, { agent, source, signal }) {
+export async function applyChildSelection(llm, selection, { agent, source, signal }, sessionController) {
   if (!shouldRouteChild(source, agent.session.header)) return false;
   const route = selectionRoute(selection);
   if (!route) return false;
   // Validate before publication; never silently fall back to an unintended model.
   await llm.resolveCallConfig(route, signal);
   signal?.throwIfAborted();
-  agent.model.select(route); // Official durable model/selection event, not request rewriting.
+  if (typeof agent.model?.select === 'function') {
+    // DSH 0.2.2+: public, durable per-Agent model selection.
+    await agent.model.select(route);
+  } else {
+    // DSH 0.2.1-rc.5 has no Agent.model. Its internal Web controller writes the
+    // same model/selection event and installs the Agent-local request selection.
+    // Capability-check this private bridge; never call public selectModel(),
+    // which rejects child sessions and also changes the deployment default.
+    const agents = sessionController?.agents;
+    if (typeof agents?.selectForNextRequest !== 'function') {
+      fail('model_selection_unavailable', 'Host exposes neither agent.model.select nor the rc.5 session selection bridge. Update DSH or switch subagent settings to inherit.');
+    }
+    await agents.selectForNextRequest(agent, route);
+  }
+  // Publication errors propagate: do not retry another API or silently run a
+  // child on an unintended provider after a possibly committed selection.
   return true;
 }
 
