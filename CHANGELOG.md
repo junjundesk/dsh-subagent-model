@@ -1,5 +1,21 @@
 # 更新记录
 
+## 1.1.0
+
+### 团队消息参数守卫
+
+- 针对 `active teammate "<uuid>" not found`：识别把子代理/会话 UUID 当成队友名的 `send_message` / `interrupt_agent` 调用，返回应使用的队友名字或合法名字列表，而不是原始堆栈。
+- 合法调用（`lead`、有效队友名、子代理控制工具的 `agent_id`）不受影响。
+- 挂载 Agent Teams 时注册一条很短的提示，引导先 `list_agents` 再用 `target`。
+- 明确限制：DSH 的 `tools/pre-execute` / `tools/execute` 不允许插件改写参数；本功能是“校验 + 可纠正拒绝”，不是篡改工具调用。
+- 新增 `guardTeamTargets` 配置（默认 `true`），可在 profile 配置中关闭。
+- 自动化测试增至 44 项，全部通过。
+
+### 注意
+
+- 这是独立的防御功能，不改变子代理模型选择、主代理模型或原生 Agent Teams 工具定义。
+- 升级后需重启 DSH profile 才会加载新的 Host 代码，并刷新浏览器。
+
 ## 1.0.1
 
 ### 修复设置页无法读取数据

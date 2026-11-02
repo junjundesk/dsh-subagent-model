@@ -4,7 +4,7 @@ QQ交流群:744475787
 
 为 **DeepSeek Harness（DSH）新建的本地子代理**单独选择分组、模型和推理强度，主对话模型保持不变。支持自定义 **Chat Completions、Responses、Claude / Anthropic Messages API**。
 
-- 当前插件版本：**1.0.1**，已修复设置页 `remote.settings without inject` 问题。
+- 当前插件版本：**1.1.0**，包含团队消息参数守卫；1.0.1 修复了设置页 `remote.settings without inject` 问题。
 - 已验证的 DSH：**0.2.2-alpha.2 / Web profile / Windows**。
 - 原生 DSH 插件；不是独立网页，不需要另开服务。
 - 默认不覆盖任何模型，安装后由你决定是否启用固定模型。
@@ -22,6 +22,7 @@ QQ交流群:744475787
 | 密钥隔离 | 密钥交给 DSH 凭据服务，插件配置只保存凭据引用 |
 | 可恢复 | 切回“跟随 DSH 原有行为”即可停止覆盖 |
 | 中英文界面 | 跟随 DSH 语言和主题，提供设置入口及插件详情页入口 |
+| 团队消息参数守卫 | 识别把子代理 UUID 当作队友名的调用，返回可纠正提示而不是原始堆栈 |
 
 ## 安装
 
@@ -31,7 +32,7 @@ QQ交流群:744475787
 2. 输入以下完整安装地址，选择安装并启用：
 
    ```text
-   github:junjundesk/dsh-subagent-model#v1.0.1
+   github:junjundesk/dsh-subagent-model#v1.1.0
    ```
 
 3. 按安装器提示刷新页面或重启 DSH。
@@ -50,7 +51,7 @@ dsh --version
 安装到 `web` profile（需要 PATH 中已有 `pnpm`；GitHub 源安装还需要 Git）。若当前 DSH 正在运行，请先保存任务并退出该 profile，再执行：
 
 ```bash
-dsh plugin --profile web add "github:junjundesk/dsh-subagent-model#v1.0.1"
+dsh plugin --profile web add "github:junjundesk/dsh-subagent-model#v1.1.0"
 ```
 
 安装会默认启用新 bundle。之后重新启动该 profile，并刷新浏览器：
@@ -65,12 +66,12 @@ dsh --profile web
 
 ### 方式三：安装发布包
 
-从 [Releases](<https://github.com/junjundesk/dsh-subagent-model/releases/tag/v1.0.1>) 下载 `dsh-subagent-model-1.0.1.tgz`，在 DSH **添加插件** 中输入下载文件的绝对路径。发布页同时提供 SHA-256 校验文件。
+从 [Releases](<https://github.com/junjundesk/dsh-subagent-model/releases/tag/v1.1.0>) 下载 `dsh-subagent-model-1.1.0.tgz`，在 DSH **添加插件** 中输入下载文件的绝对路径。发布页同时提供 SHA-256 校验文件。
 
 也可把发布资产 URL 交给 CLI：
 
 ```bash
-dsh plugin --profile web add "https://github.com/junjundesk/dsh-subagent-model/releases/download/v1.0.1/dsh-subagent-model-1.0.1.tgz"
+dsh plugin --profile web add "https://github.com/junjundesk/dsh-subagent-model/releases/download/v1.1.0/dsh-subagent-model-1.1.0.tgz"
 ```
 
 安装包包含已构建的客户端，无需编译，也没有 `postinstall` / `prepare` 脚本。
@@ -125,6 +126,19 @@ dsh plugin --profile web add "https://github.com/junjundesk/dsh-subagent-model/r
 - 密钥不进入插件源码、配置明文、浏览器 localStorage 或工具参数。**DSH 本地凭据存储不等于操作系统保险箱**，同一系统账户的进程仍可能访问底层文件。
 - 密钥保存和分组保存没有跨服务事务；部分成功会明确提示。不要盲目重复添加。
 - 禁用/卸载本插件不会主动删除原生模型分组和凭据，需在 DSH 模型设置中管理。
+
+## 团队消息参数守卫（1.1.0）
+
+Agent Teams 的 `send_message` / `interrupt_agent` 的 `target` 必须是 `list_agents` 返回的**队友名字**（如 `lead`），而子代理/会话 id 是 UUID。二者格式相似，模型容易传错，DSH 原生会抛出 `active teammate "<uuid>" not found`。
+
+本插件在调用前做防御性校验：
+
+- 把“某个队友的会话 id”自动识别出来，并在错误里给出应使用的名字。
+- 传入未知名字、UUID、`provisioning` / `failed` 队友时返回可纠正提示，而不是原始堆栈。
+- 合法调用（`lead`、有效队友名、子代理控制工具的 `agent_id` 形式）完全不受影响。
+- 挂载 Agent Teams 时额外注册一条很短的提示，引导模型先 `list_agents` 并使用 `target`。
+- 插件**不能改写**工具参数：DSH 的 `tools/pre-execute` 只允许 allow/deny/ask，`tools/execute` 只允许更换 signal。因此这里采用“校验 + 可纠正拒绝”，而不是篡改调用。
+- 不想启用时，在 profile 配置中把本插件的 `guardTeamTargets` 设为 `false`。该守卫不改模型，也不影响非 Teams profile。
 
 ## 升级、禁用与卸载
 

@@ -4,9 +4,9 @@ import { readFile } from 'node:fs/promises';
 import {
   normalizeSelection, selectionRoute, validateCatalogSelection, normalizeBaseURL,
   prepareCustomProvider, shouldRouteChild, applyChildSelection, createController,
-  findOwnNamespace, findAdapterNamespace,
+  findOwnNamespace, findAdapterNamespace, teamTargetIssue, isAgentIdLike, TEAM_TARGET_GUIDANCE,
 } from '../logic.js';
-import { apply, Config } from '../index.js';
+import { apply, Config, installTeamTargetGuard } from '../index.js';
 
 const catalog = {
   groups: [{ id: 'group-a', name: 'A', models: [{ id: 'model-a', name: 'Model A', reasoning: { efforts: [{ id: 'low', name: 'Low' }, { id: 'high', name: 'High' }], defaultEffort: 'low' } }] }],
@@ -162,6 +162,62 @@ test('read-only Host facts prevent writes through shared operations', async () =
   const f = fixture(); f.api.describe = async () => ({ writable: false, namespaces: [f.own, f.adapter] });
   await rejectsCode(() => f.controller.save(fixed, 3), 'settings_read_only');
   assert.equal(f.writes.length, 0);
+});
+test('team target guard resolves teammate session ids to names', () => {
+  const members = [
+    { id: 'lead-id', name: 'lead', role: 'lead', status: 'running' },
+    { id: '34980b36-d7d0-4470-a65e-d514a61b5557', name: 'explorer', role: 'teammate', status: 'inactive' },
+  ];
+  assert.equal(teamTargetIssue('send_message', { target: 'lead' }, members), undefined);
+  assert.equal(teamTargetIssue('send_message', { target: 'explorer' }, members), undefined);
+  assert.match(teamTargetIssue('send_message', { target: members[1].id }, members), /session id of teammate "explorer".*"explorer"/);
+  assert.match(teamTargetIssue('send_message', { target: '34980b36-d7d0-4470-a65e-d514a61b5558' }, []), /subagent or session id/);
+  assert.match(teamTargetIssue('interrupt_agent', { target: 'nobody' }, members), /Unknown teammate target/);
+  assert.match(teamTargetIssue('send_message', { target: 'explorer' }, [{ ...members[1], status: 'provisioning' }]), /still provisioning/);
+  assert.match(teamTargetIssue('send_message', { target: 'explorer' }, [{ ...members[1], status: 'failed' }]), /failed to start/);
+  // The subagent control variant uses agent_id and must never be blocked by this guard.
+  assert.equal(teamTargetIssue('send_message', { agent_id: members[1].id }, members), undefined);
+  assert.equal(teamTargetIssue('bash', { target: members[1].id }, members), undefined);
+  assert.equal(teamTargetIssue('send_message', { message: 'hi' }, members), undefined);
+  assert.equal(teamTargetIssue('send_message', { target: 42 }, members), undefined);
+  // A teammate legitimately named like a UUID is still addressed by name.
+  assert.equal(teamTargetIssue('send_message', { target: members[1].id }, [{ ...members[1], name: members[1].id }]), undefined);
+  assert.equal(isAgentIdLike(members[1].id), true);
+  assert.equal(isAgentIdLike('explorer'), false);
+});
+test('team target guard installs a corrective guard and one prompt section', () => {
+  const members = [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', name: 'explorer', role: 'teammate', status: 'inactive' }];
+  const guards = []; const sections = []; const effects = [];
+  const ctx = {
+    tools: { guard: fn => { guards.push(fn); return () => {}; } },
+    get: name => name === 'agentTeams'
+      ? { listMembers: () => members }
+      : name === 'systemPrompt' ? { section: section => { sections.push(section); return () => {}; } } : undefined,
+    effect: fn => { effects.push(fn); return fn(); },
+  };
+  installTeamTargetGuard(ctx);
+  assert.equal(guards.length, 1);
+  assert.equal(sections.length, 1);
+  assert.equal(sections[0].name, 'dsh-subagent-model:team-targets');
+  assert.equal(sections[0].text, TEAM_TARGET_GUIDANCE);
+  const agent = { id: 'agent-1' };
+  assert.match(guards[0]({ name: 'send_message', arguments: { target: members[0].id }, agent }), /session id of teammate "explorer"/);
+  assert.equal(guards[0]({ name: 'send_message', arguments: { target: 'explorer' }, agent }), undefined);
+  assert.equal(guards[0]({ name: 'dsh_subagent_model', arguments: { action: 'status' }, agent }), undefined);
+  assert.equal(guards[0]({ name: 'send_message', arguments: { target: 'x' } }), undefined);
+});
+test('team target guard tolerates profiles without Agent Teams', () => {
+  let guards = 0; let sections = 0;
+  const ctx = {
+    tools: { guard: () => { guards++; return () => {}; } },
+    get: () => undefined,
+    effect: fn => fn(),
+  };
+  installTeamTargetGuard(ctx);
+  // The guard is harmless without Teams (it resolves the service per call), and no
+  // prompt section is added to profiles that do not mount Agent Teams.
+  assert.equal(guards, 1);
+  assert.equal(sections, 0);
 });
 test('all UI languages have matching keys and metadata', async () => {
   const [zh, en] = await Promise.all(['zh', 'en'].map(async lang => JSON.parse(await readFile(new URL(`../locale/${lang}.json`, import.meta.url), 'utf8'))));

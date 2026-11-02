@@ -1,5 +1,5 @@
 import Schema from '@deepseek-ai/schemastery';
-import { PLUGIN_ID, applyChildSelection, createController, EFFORTS } from './logic.js';
+import { PLUGIN_ID, applyChildSelection, createController, EFFORTS, TEAM_TARGET_GUIDANCE, TEAM_TARGET_TOOLS, teamTargetIssue } from './logic.js';
 
 export const name = PLUGIN_ID;
 export const inject = ['llm', 'settings', 'sessionController', 'tools', 'credentials'];
@@ -10,6 +10,9 @@ export const Config = Schema.object({
     model: Schema.string().default(''),
     reasoningEffort: Schema.string().default(''),
   }).default({ mode: 'inherit' }).volatile(),
+  // Defensive guidance for Agent Teams: its send_message takes a teammate NAME, while
+  // subagent/session ids are UUIDs that look similar. Valid calls are untouched.
+  guardTeamTargets: Schema.boolean().default(true),
 });
 
 export function createHostApi(ctx) {
@@ -22,10 +25,38 @@ export function createHostApi(ctx) {
   };
 }
 
+/**
+* Reject a Team message addressed to a session/subagent UUID (or an unknown name)
+* with the exact correction, and state the name contract once in the prompt.
+* DSH's tools/pre-execute and tools/execute contracts forbid rewriting arguments,
+* so deny-with-guidance is the strongest legal plugin-level fix.
+* @param ctx - plugin Host context.
+*/
+export function installTeamTargetGuard(ctx) {
+  if (typeof ctx.tools?.guard !== 'function') return;
+  const service = name => (typeof ctx.get === 'function' ? ctx.get(name) : undefined);
+  ctx.effect(() => ctx.tools.guard(exec => {
+    if (!exec?.agent || !TEAM_TARGET_TOOLS.includes(exec.name)) return undefined;
+    const teams = service('agentTeams');
+    if (!teams || typeof teams.listMembers !== 'function') return undefined;
+    let members;
+    try { members = teams.listMembers(exec.agent); } catch { return undefined; }
+    return teamTargetIssue(exec.name, exec.arguments, members);
+  }));
+  // One short global section, only while Agent Teams is mounted. Valid calls and
+  // non-Team profiles are untouched; the guard remains authoritative.
+  const teams = service('agentTeams');
+  const prompt = service('systemPrompt');
+  if (teams && prompt && typeof prompt.section === 'function') {
+    ctx.effect(() => prompt.section({ name: 'dsh-subagent-model:team-targets', order: 900, text: TEAM_TARGET_GUIDANCE }));
+  }
+}
+
 export function apply(ctx, config) {
   const controller = createController(createHostApi(ctx));
   ctx.effect(() => ctx.settings.configure({ auto: false }, ctx.fiber));
   ctx.on('agent/created', payload => applyChildSelection(ctx.llm, config.selection.get(), payload).then(() => undefined));
+  if ((config?.guardTeamTargets?.get?.() ?? true) === true) installTeamTargetGuard(ctx);
 
   // Both this tool and the UI use createController -> the same native settings operations.
   // Credential entry is deliberately user-only; the tool never accepts or returns a key.

@@ -118,6 +118,49 @@ function findAdapterNamespace(namespaces, directory) {
   return candidates[0];
 }
 
+/** Tools whose `target` is a durable teammate name, never a session/subagent id. */
+const TEAM_TARGET_TOOLS = Object.freeze(['send_message', 'interrupt_agent']);
+
+/** Model-facing guidance registered while Agent Teams is mounted. */
+const TEAM_TARGET_GUIDANCE = 'Agent Teams messaging: send_message and interrupt_agent take a teammate name from list_agents (for example "lead"), never a subagent or session id. Call list_agents and pass its target when unsure.';
+
+/** Recognize a session/subagent UUID even though it also matches the teammate-name grammar. */
+function isAgentIdLike(value) {
+  return typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value.trim());
+}
+
+/**
+* Explain why one Team messaging call cannot be addressed, using the live roster.
+* DSH forbids plugins from rewriting tool arguments, so this drives a corrective
+* denial instead of letting the built-in roster lookup throw an opaque stack.
+* @param tool - tool name as dispatched.
+* @param args - parsed call arguments.
+* @param members - live TeamMemberView rows for the caller.
+* @returns a corrective message, or undefined when the call is addressable.
+*/
+function teamTargetIssue(tool, args, members) {
+  if (!TEAM_TARGET_TOOLS.includes(tool)) return undefined;
+  if (!args || typeof args !== 'object' || Array.isArray(args)) return undefined;
+  const raw = args.target;
+  if (typeof raw !== 'string') return undefined; // Unknown signature (for example the subagent agent_id tool) or schema failure.
+  const target = raw.trim();
+  if (!target || target === 'lead') return undefined;
+  const roster = Array.isArray(members) ? members.filter(member => member && typeof member.name === 'string') : [];
+  const byName = roster.find(member => member.name === target);
+  if (byName) {
+    if (byName.status === 'failed') return `Teammate "${target}" failed to start. Call list_agents for its diagnostics and create a replacement if needed.`;
+    if (byName.status === 'provisioning') return `Teammate "${target}" is still provisioning. Wait via list_agents/wait_agent, then retry with target "${target}".`;
+    return undefined;
+  }
+  const byId = roster.find(member => member.id === target);
+  if (byId) return `"${target}" is the session id of teammate "${byId.name}", not a message target. Pass target: "${byId.name}".`;
+  const names = roster.map(member => member.name).slice(0, 12);
+  const valid = names.length > 0 ? `Valid targets: ${names.join(', ')}.` : 'No teammates exist yet; create one with spawn_teammate.';
+  if (isAgentIdLike(target)) return `"${target}" looks like a subagent or session id, not a teammate name. ${valid}`;
+  return `Unknown teammate target "${target}". ${valid}`;
+}
+
+
 function createController(api) {
   return {
     async read() {
@@ -178,7 +221,7 @@ function createController(api) {
     }
 
     return {
-      name: `${PLUGIN_ID}@1.0.1`,
+      name: `${PLUGIN_ID}@1.1.0`,
       // Remote namespaces are separate Cordis services; the root alone does not grant access.
       inject: ['slots', 'locale', 'remote', 'remote.settings', 'remote.session', 'remote.llm', 'remote.credentials'],
       apply(ctx) {

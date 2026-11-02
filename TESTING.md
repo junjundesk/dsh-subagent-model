@@ -4,10 +4,10 @@
 
 ## 当前版本
 
-- 插件：`dsh-subagent-model@1.0.1`。
+- 插件：`dsh-subagent-model@1.1.0`。
 - 已验证 DSH：`0.2.2-alpha.2`。
 - 实际宿主环境：Windows、Web profile。
-- 自动化：**41 项测试通过**；源码和生成产物的 JavaScript 语法检查通过。
+- 自动化：**44 项测试通过**；源码和生成产物的 JavaScript 语法检查通过。
 
 ## 已验证
 
@@ -42,6 +42,14 @@ cannot get property "remote.settings" without inject
 原因是仅声明了 `remote` 根服务，遗漏细粒度 Remote 命名空间依赖。**Slot 注册成功不等于页面已经读取数据成功**。
 
 1.0.1 增加 `remote.settings`、`remote.session`、`remote.llm`、`remote.credentials`。新增两项契约测试在旧代码上失败、修复后通过；新版安装后，连接页面的注册标识变为 `dsh-subagent-model@1.0.1`。
+
+### 1.1.0 团队消息参数守卫
+
+- 新增 `teamTargetIssue`：将队友会话 UUID 解析为对应名字，未知名字/UUID/`provisioning`/`failed` 返回可纠正提示；`lead`、有效队友名和子代理控制工具的 `agent_id` 调用不受影响。
+- 新增守卫注册测试：确认只拦截 Team 的 `send_message` / `interrupt_agent`，不拦截插件自己的工具或没有 caller agent 的调用。
+- 挂载 Agent Teams 时注册一条短提示；无 Teams 的 profile 不增加提示。
+- 明确限制：DSH 不允许插件改写参数，守卫只能拒绝并说明正确参数，不能替模型替换调用。
+- 自动化测试从 41 项增至 **44 项**，全部通过。
 
 ## 未验证、不能据此承诺的部分
 

@@ -6,7 +6,7 @@
 
 1. 运行 `dsh --version`，当前已验证版本为 **0.2.2-alpha.2**。
 2. 使用挂载了原生模型、设置、凭据服务的 DSH Web profile。
-3. 安装标签 `github:junjundesk/dsh-subagent-model#v1.0.1`，启用插件后按提示刷新或重启。
+3. 安装标签 `github:junjundesk/dsh-subagent-model#v1.1.0`，启用插件后按提示刷新或重启。
 4. 在 **设置 → 子代理模型** 打开；插件详情页也有相同面板。
 
 安装只注册功能，默认“跟随 DSH 原有行为”，不会帮你自动挑选或切换付费模型。
@@ -102,7 +102,13 @@ Claude:    https://api.anthropic.com
 
 ### `cannot get property "remote.settings" without inject`
 
-这是 1.0.0 的 Client 依赖声明缺失，**1.0.1 已修复**。确认安装的是 `#v1.0.1`，关闭设置后重新打开；旧缓存可强制刷新，仍不更新时按安装器提示重启 profile。
+这是 1.0.0 的 Client 依赖声明缺失，**1.0.1 已修复**。确认安装的是 `#v1.1.0` 或更新的 1.x 版本，关闭设置后重新打开；旧缓存可强制刷新，仍不更新时按安装器提示重启 profile。
+
+### `active teammate "<uuid>" not found`
+
+这是 DSH 内置 Agent Teams 的 `send_message` / `interrupt_agent` 参数问题：`target` 必须是 `list_agents` 返回的队友名字（例如 `lead`），不是子代理/会话 UUID。
+
+从 1.1.0 起，插件会在调用前校验：把 UUID 识别出来并提示对应队友名，或列出合法名字，避免原始堆栈。如果仍看到原始错误，先确认插件已升级并重启；然后调用 `list_agents`，使用返回的 `target`（不是 `id`）重试。给子代理发消息应使用子代理控制工具的 `agent_id` 形式，不要用 Team 的 `send_message`。
 
 ### 找不到设置入口
 
